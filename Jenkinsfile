@@ -1,59 +1,65 @@
 pipeline {
-
   environment {
-    registry = "10.138.0.3:5001/mgsgoms/flask"
-    registry_mysql = "10.138.0.3:5001/mgsgoms/mysql"
+    registry = "msrathnadeepak"
     dockerImage = ""
   }
 
   agent any
-    stages {
-  
+
+  stages {
     stage('Checkout Source') {
       steps {
-        git 'https://github.com/mgsgoms/Docker-Project.git'
+        git 'https://github.com/msrathnadeepak/Docker-Project.git'
       }
     }
 
-    stage('Build image') {
-      steps{
+    stage('Build Python Flask Image') {
+      steps {
         script {
-          dockerImage = docker.build registry + ":$BUILD_NUMBER"
+          // Build the Python Flask image
+          dockerImage = docker.build registry + "/python-flask:$BUILD_NUMBER", "-f flask/Dockerfile ."
         }
       }
     }
 
-    stage('Push Image') {
-      steps{
+    stage('Push Python Flask Image') {
+      steps {
         script {
-          docker.withRegistry( "" ) {
+          // Push the Python Flask image to the Docker registry
+          docker.withRegistry([credentialsId: 'docker-hub-credentials', url: 'https://hub.docker.com/repositories/msrathnadeepak']) {
             dockerImage.push()
           }
         }
       }
     }
 
-    stage('current') {
-      steps{
-        dir("${env.WORKSPACE}/mysql"){
-          sh "pwd"
-          }
-      }
-   }
-   stage('Build mysql image') {
-     steps{
-       sh 'docker build -t "10.138.0.3:5001/mgsgoms/mysql:$BUILD_NUMBER"  "$WORKSPACE"/mysql'
-        sh 'docker push "10.138.0.3:5001/mgsgoms/mysql:$BUILD_NUMBER"'
-        }
-      }
-    stage('Deploy App') {
+    stage('Build MySQL Image') {
       steps {
         script {
-          kubernetesDeploy(configs: "frontend.yaml", kubeconfigId: "kube")
+          // Build the MySQL image
+          docker.build registry + "/mysql:$BUILD_NUMBER", "-f mysql/Dockerfile ."
         }
       }
     }
 
-  }
+    stage('Push MySQL Image') {
+      steps {
+        script {
+          // Push the MySQL image to the Docker registry
+          docker.withRegistry([credentialsId: 'docker-hub-credentials', url: 'https://hub.docker.com/repositories/msrathnadeepak']) {
+            docker.push registry + "/mysql:$BUILD_NUMBER"
+          }
+        }
+      }
+    }
 
+    stage('Deploy App') {
+      steps {
+        script {
+          // Deploy your application to Kubernetes (adjust this step according to your Kubernetes deployment method)
+          sh 'kubectl apply -f frontend.yaml'
+        }
+      }
+    }
+  }
 }
