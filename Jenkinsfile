@@ -17,7 +17,7 @@ pipeline {
       steps {
         script {
           // Build the Python Flask image
-          dockerImage = docker.build registry + "/python-flask:$BUILD_NUMBER", "-f flask/Dockerfile ."
+          dockerImage = docker.build registry+"/python-flask:$BUILD_NUMBER", "-f flask/Dockerfile"
         }
       }
     }
@@ -37,7 +37,7 @@ pipeline {
       steps {
         script {
           // Build the MySQL image
-          docker.build registry + "/mysql:$BUILD_NUMBER", "-f mysql/Dockerfile ."
+          docker.build registry+"/mysql:$BUILD_NUMBER", "-f mysql/Dockerfile"
         }
       }
     }
